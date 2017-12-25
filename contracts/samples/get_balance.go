@@ -2,10 +2,17 @@ package main
 
 import (
 	"fmt"
+	//"log"
+	//"math/big"
+	//"time"
 	"context"
 	"os"
 	"github.com/ethereum/go-ethereum/ethclient"
     "github.com/ethereum/go-ethereum/common"
+	//"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	//"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
+	//"github.com/ethereum/go-ethereum/core"
+	//"github.com/ethereum/go-ethereum/crypto"
 )
 
 func main() {
