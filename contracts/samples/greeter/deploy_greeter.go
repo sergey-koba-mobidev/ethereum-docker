@@ -1,69 +1,66 @@
 package main
 
 import (
+	"os"
 	"fmt"
+	"strings"
 	"log"
-	"math/big"
-	"time"
 
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
+const key = "{\"address\":\"007ccffb7916f37f7aeef05e8096ecfbe55afc2f\",\"Crypto\":{\"cipher\":\"aes-128-ctr\",\"ciphertext\":\"44600de3be08153de243f0de344b9841c774a2fcd5b7f3406b9ea9a42c8be97b\",\"cipherparams\":{\"iv\":\"9ca680df904bc0138d2d52f9c432a797\"},\"kdf\":\"scrypt\",\"kdfparams\":{\"dklen\":32,\"n\":262144,\"p\":1,\"r\":8,\"salt\":\"a6524c4ef60060476f2e47dea7f5945aac8159019d3bf5275a683c1970d03c40\"},\"mac\":\"4daf73bc6da7f75beb9a8ea28896c5f1f074fb8cd54880fa9a4e34700dc0ee00\"},\"id\":\"2615dd6a-6d73-4b05-a02d-257b0fd28d3a\",\"version\":3}"
+
 func main() {
-	key, _ := crypto.GenerateKey()
-	auth := bind.NewKeyedTransactor(key)
+	conn, err := ethclient.Dial("http://bootstrap:8545")
 
-	alloc := make(core.GenesisAlloc)
-	alloc[auth.From] = core.GenesisAccount{Balance: big.NewInt(133700000)}
-	sim := backends.NewSimulatedBackend(alloc)
+	if err != nil {
+		fmt.Printf("Cannot connect to node %v", err)
+		os.Exit(1)
+	}
 
-	// deploy contract
-	addr, _, contract, err := DeployWinnerTakesAll(auth, sim, big.NewInt(10), big.NewInt(time.Now().Add(2*time.Minute).Unix()), big.NewInt(time.Now().Add(5*time.Minute).Unix()))
+	auth, errAuth := bind.NewTransactor(strings.NewReader(key), "")
+	if errAuth != nil {
+		log.Fatalf("Failed to create new transactor : %v", errAuth)
+	}
+
+	action := os.Args[1]
+	fmt.Printf("Executing action: %v\n", action)
+
+	switch action {
+	case "deploy":
+		DoDeploy(auth, conn)
+	case "greet":
+		hexAddr := os.Args[2]
+		DoGreet(conn, common.HexToAddress(hexAddr))
+	}
+
+}
+
+func DoDeploy(auth *bind.TransactOpts, conn bind.ContractBackend) (common.Address, *Greeter, error) {
+	//deploy contract
+	addr, _, contract, err := DeployGreeter(auth, conn, "Hello I am first deployed SC! Gratz!")
 	if err != nil {
 		log.Fatalf("could not deploy contract: %v", err)
 	}
 
-	// interact with contract
-	fmt.Printf("Contract deployed to %s\n", addr.String())
-	deadlineCampaign, _ := contract.DeadlineCampaign(nil)
-	fmt.Printf("Pre-mining Campaign Deadline: %s\n", deadlineCampaign)
+	fmt.Printf("Contract address: %v\n", addr.Hex())
+	fmt.Printf("Contract: %v\n", contract)
+	return addr, contract, err
+}
 
-	fmt.Println("Mining...")
-	// simulate mining
-	sim.Commit()
-
-	postDeadlineCampaign, _ := contract.DeadlineCampaign(nil)
-	fmt.Printf("Post-mining Campaign Deadline: %s\n", time.Unix(postDeadlineCampaign.Int64(), 0))
-
-	// create a project
-	numOfProjects, _ := contract.NumberOfProjects(nil)
-	fmt.Printf("Number of Projects before: %d\n", numOfProjects)
-
-	fmt.Println("Adding new project...")
-	contract.SubmitProject(&bind.TransactOpts{
-		From:     auth.From,
-		Signer:   auth.Signer,
-		GasLimit: big.NewInt(2381623),
-		Value:    big.NewInt(10),
-	}, "test project", "http://www.example.com")
-
-	fmt.Println("Mining...")
-	sim.Commit()
-
-	numOfProjects, _ = contract.NumberOfProjects(nil)
-	fmt.Printf("Number of Projects after: %d\n", numOfProjects)
-	info, _ := contract.GetProjectInfo(nil, auth.From)
-	fmt.Printf("Project Info: %v\n", info)
-
-	// instantiate deployed contract
-	fmt.Printf("Instantiating contract at address %s...\n", auth.From.String())
-	instContract, err := NewWinnerTakesAll(addr, sim)
+func DoGreet(conn bind.ContractBackend, addr common.Address) (string, error) {
+	// Instantiate the contract and display its greeting
+	greeter, err := NewGreeter(addr, conn)
 	if err != nil {
-		log.Fatalf("could not instantiate contract: %v", err)
+		log.Fatalf("Failed to instantiate a Greeter contract: %v", err)
 	}
-	numOfProjects, _ = instContract.NumberOfProjects(nil)
-	fmt.Printf("Number of Projects of instantiated Contract: %d\n", numOfProjects)
+	greeting, err := greeter.Greet(nil)
+	if err != nil {
+		log.Fatalf("Failed to retrieve greeter greeting: %v", err)
+	}
+	fmt.Println("Contract Greeting:", greeting)
+	return greeting, err
 }

@@ -19,7 +19,7 @@ func main() {
     client, err := ethclient.Dial("http://bootstrap:8545")
 
 	if err != nil {
-		fmt.Printf("%v", err)
+		fmt.Printf("Cannot connect to node %v", err)
 		os.Exit(1)
 	}
 
