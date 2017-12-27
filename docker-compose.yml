@@ -51,3 +51,9 @@ services:
       - bootstrap
     volumes:
       - ./contracts:/contracts
+
+  explorer:
+    build: explorer
+    container_name: explorer
+    ports:
+      - "8000:8000"
