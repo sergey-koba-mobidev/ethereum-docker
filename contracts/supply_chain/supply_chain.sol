@@ -9,6 +9,7 @@ contract SupplyChain {
         string data;
         address creator;
         address owner;
+        bool initialized;
     }
 
     mapping (uint => Product) products;
@@ -20,28 +21,26 @@ contract SupplyChain {
         numberOfProducts = 0;
     }
 
-    function addProduct(string data) public returns (uint uid) {
+    function addProduct(string data) public returns (bool success) {
         numberOfProducts++;
-        products[numberOfProducts] = Product(numberOfProducts, 0, data, msg.sender, msg.sender);
-        return numberOfProducts;
+        products[numberOfProducts] = Product(numberOfProducts, 0, data, msg.sender, msg.sender, true);
+        return true;
     }
 
     function transferProduct(uint uid, address addr) public returns (bool success) {
-        if (!products[uid].uid) {
-            throw;
-        }
-        if (products[uid].owner != msg.sender) {
-            throw;
-        }
+        require(products[uid].initialized);
+        require(products[uid].owner == msg.sender);
         products[uid].owner = addr;
         return true;
     }
 
-    function getProductInfo(uint uid) public constant returns (uint uid, uint state, string data, address owner, address creator) {
-        var product = products[uid];
-        if (!product.uid) {
-            throw;
-        }
+    function getProductInfo(uint _uid) public constant returns (uint uid, uint state, string data, address owner, address creator) {
+        var product = products[_uid];
+        require(product.initialized);
         return (product.uid, product.state, product.data, product.owner, product.creator);
     }
 }
+
+// TODO: Administrator access
+// TODO: split into many contracts to track transactions
+// TODO: Product id should be returned via event
