@@ -57,3 +57,14 @@ services:
     container_name: explorer
     ports:
       - "8000:8000"
+
+  api:
+    build: api
+    container_name: api
+    command: bee run
+    ports:
+      - "8080:8080"
+    links:
+      - bootstrap
+    volumes:
+      - ./api:/gopath/src/api

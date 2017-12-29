@@ -24,3 +24,7 @@
 - deploy smart contract `dc run builder bash -c "cd /contracts/supply_chain/ && go build . && ./supply_chain deploy"`
 - add product `dc run builder bash -c "cd /contracts/supply_chain/ && go build . && ./supply_chain add_product 0x7117983d3Be99e1CbE296dFeAf034c91Db3cD02B test_data"` replace `0x7117983d3Be99e1CbE296dFeAf034c91Db3cD02B` with contract address
 - get product info with id=2 `dc run builder bash -c "cd /contracts/supply_chain/ && go build . && ./supply_chain get_product 0x7117983d3Be99e1CbE296dFeAf034c91Db3cD02B 2"` replace `0x7117983d3Be99e1CbE296dFeAf034c91Db3cD02B` with contract address
+
+# Conclusion
+- double arrays in Solidity are Pain. You should decouple into separate contracts if you need double arrays.
+- In order to get some info after wrrite operation you need to use events in contracts.
