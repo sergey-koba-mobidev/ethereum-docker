@@ -53,8 +53,9 @@ services:
       - ./contracts:/contracts
 
   explorer:
-    build: explorer
+    build: explorer-v2
     container_name: explorer
+    command: npm start
     ports:
       - "8000:8000"
 
